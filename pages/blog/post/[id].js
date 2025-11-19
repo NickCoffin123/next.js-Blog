@@ -1,10 +1,9 @@
-"use strict"
 import {useContext} from "react";
 import {PostContext} from "@/components/PostContext.js";
 import {useRouter} from "next/router";
-import Image from "next/image";
+import PostDetail from "@/components/PostDetail";
 
-export default function PostDetail() {
+export default function PostPage({error}) {
     const router = useRouter();
     const {id} = router.query;
     const {posts} = useContext(PostContext);
@@ -19,35 +18,23 @@ export default function PostDetail() {
         router.push("/blog");
     }
 
-    if (!post) return <h2>Post not found</h2>;
+    if (error){
+        return (
+            <section className="card">
+                <p role="alert">{error}</p>
+            </section>
+        )
+    }
+
+    if (!post)
+        return (
+        <section className="card">
+            <p>Loading post, please wait...</p>
+        </section>
+    );
 
     return (
-        <>
-            <section className="card">
-                {post ? (
-                    <div>
-                        <h2>{post.title}</h2>
-                        <p>{post.author}</p>
-                        <p>{post.content}</p>
-                        <p>{post.category}</p>
-                        {post.image && (
-                            <Image src={post.image} alt={post.title} width={600} height={400}/>
-                        )}
-                        <button onClick={handleBack}>
-                            Back to Blog Page
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <h2>Post Not Found</h2>
-                        <p>The post with the id {id} does not exist</p>
-                        <button onClick={handleBack}>
-                            Back to Blog Page
-                        </button>
-                    </>
-                )}
-            </section>
-        </>
+       <PostDetail post={post}/>
     );
 
 }
