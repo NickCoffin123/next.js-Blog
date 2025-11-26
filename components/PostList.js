@@ -1,6 +1,7 @@
-import {useContext} from "react";
-import {PostContext} from "./PostContext.js";
+import { useContext } from "react";
+import { PostContext } from "./PostContext.js";
 import Link from "next/link";
+import { AuthContext } from "@/components/AuthContext";
 
 export default function PostList({
                                      posts: propPosts,
@@ -10,50 +11,101 @@ export default function PostList({
                                      onPageChange
                                  }) {
 
-    const {posts: contextPosts, setPosts, removePost} = useContext(PostContext);
-    const posts = propPosts || contextPosts || []
+    // Get posts from global PostContext
+    const { posts: contextPosts, setPosts } = useContext(PostContext);
+    const posts = propPosts || contextPosts || [];
+
+    // Authenticated user (email + role)
+    const user = useContext(AuthContext);
+
+    // Remove from UI without touching DB yet
+    const handleRemove = (postId) => {
+        setPosts(posts.filter(post => post.id !== postId));
+    };
+
+    // DELETE request to your API
+    const handleDelete = async (postId) => {
+        if (!confirm("Confirm Delete?")) return;
+
+        try {
+            const response = await fetch(
+                `http://localhost:3000/api/posts?id=${postId}`,
+                { method: "DELETE" }
+            );
+
+            if (response.ok) {
+                handleRemove(postId); // update local state
+            } else {
+                alert("Failed to delete post.");
+            }
+        } catch (err) {
+            alert("Network Error, Failed to DELETE");
+        }
+    };
+
+    if (posts.length === 0) {
+        return <p>No posts available</p>;
+    }
 
     return (
         <div className="post-list">
-            <h3>Blog Posts - {`Page ${page} of ${totalPages}, Total Posts: ${totalPosts}`}</h3>
+            <h3>
+                Blog Posts – Page {page} of {totalPages}, Total Posts: {totalPosts}
+            </h3>
+
             <ul>
-                {posts.length === 0 ? (
-                    <p>No posts available</p>
-                ) : (
-                    posts.map((post) => (
-                        <li key={post.id}>
-                            <Link href={`/blog/post/${post.id}`}>
-                                <span>{post.title} by {post.author} (ID: {post.id})</span>
-                            </Link>
-                            <button onClick={() => removePost(post.id)} aria-label={`Remove ${post.title}`}>
-                                Remove
-                            </button>
-                        </li>
-                    ))
-                )}
+                {posts.map((post) => (
+                    <li key={post.id}>
+                        <Link href={`/blog/post/${post.id}`}>
+                            <span>
+                                {post.title} by {post.author} (ID: {post.id})
+                            </span>
+                        </Link>
+
+                        {/* Only show Edit / Delete to author or admin */}
+                        {(post.author === user?.email || user?.role === "admin") && (
+                            <div style={{ display: "flex", gap: "0.5rem" }}>
+                                <Link
+                                    href={`/dashboard/edit/${post.id}`}
+                                    className="edit-link"
+                                >
+                                    Edit
+                                </Link>
+
+                                <button
+                                    onClick={() => handleDelete(post.id)}
+                                    className="delete-btn"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+                    </li>
+                ))}
             </ul>
 
+            {/* Pagination */}
             {onPageChange && (
-
                 <div className="pagination">
                     <button
                         disabled={page <= 1}
                         onClick={() => onPageChange(page - 1)}
-                    >Back
+                    >
+                        Previous
                     </button>
 
-                    <span>Page {page} of {totalPages}</span>
+                    <span>
+                        Page {page} of {totalPages}
+                    </span>
 
                     <button
-                        disabled={page >= totalPages} onClick={() => (onPageChange(page + 1))}
-                    >Next
+                        disabled={page >= totalPages}
+                        onClick={() => onPageChange(page + 1)}
+                    >
+                        Next
                     </button>
-
                 </div>
             )}
-
         </div>
     );
 }
-
-
