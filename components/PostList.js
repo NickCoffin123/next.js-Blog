@@ -16,7 +16,7 @@ export default function PostList({
     const posts = propPosts || contextPosts || [];
 
     // Authenticated user (email + role)
-    const user = useContext(AuthContext);
+    const {user} = useContext(AuthContext);
 
     // Remove from UI without touching DB yet
     const handleRemove = (postId) => {
@@ -50,7 +50,7 @@ export default function PostList({
     return (
         <div className="post-list">
             <h3>
-                Blog Posts – Page {page} of {totalPages}, Total Posts: {totalPosts}
+                Blog Posts {totalPosts !== undefined && ` (Page ${page} of ${totalPages}, Total: ${totalPosts})`}
             </h3>
 
             <ul>
