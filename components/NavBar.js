@@ -1,14 +1,18 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {useRouter} from "next/router";
-import {useContext} from "react";
-import {AuthContext} from "@/components/AuthContext";
-import LoginForm from "@/components/LoginForm";
+import {signIn, signOut, useSession} from "next-auth/react";
 
 export default function NavBar() {
     const router = useRouter();
     const isActive = (pathname) => router.pathname === pathname;
-    const {user, logout} = useContext(AuthContext);
+
+    // Used to replace AuthContext
+    const {data: session, status} = useSession();
+    const user = session?.user || null
+    const isAdmin = user?.role === "admin"
+    const loading = status === "loading"
+
 
     return (
         <nav className="navbar">
@@ -45,23 +49,35 @@ export default function NavBar() {
                 {/*</li>*/}
 
                 <li style={{marginLeft: 'auto', display: 'flex', alightItems: 'center', gap: '1rem'}}>
-                    {user ? (
+                    {loading ? (
+                       <span>Loading...</span>
+                    ) : session ? (
                         <>
-                         <span style={{color: 'white', fontsize: '0.9rem'}}>
-                             Hello, {user.email}
-                         </span>
-
-                            {user.role === 'admin' && (
-                                <Link href="/dashboard" className="dashboard-link">
-                                    Admin Panel
+                        <span style={{color: 'white', fontsize: '0.9rem'}}>Hello, {user.email || user.name}</span>
+                            {isAdmin && (
+                                <Link href="/dashboard" className="admin-link">
+                                    Admin Panel (Dashboard)
                                 </Link>
                             )}
-                            <button onClick={logout} style={{fontSize: '0.85rem', padding: '0.4rem 0.8rem'}}>
-                                Logout
-                            </button>
+                            <Link href="/profile">Profile</Link>
+
+                            <button onClick={() => signOut({callbackUrl: "/"})}
+                            style={{fontsize: '0.85rem', padding: '0.4rem 0.8rem'}}
+                            >Logout</button>
                         </>
+
                     ) : (
-                        <LoginForm/>
+                        <>
+                        <button onClick={() => signIn('gitlab')}
+                        style={{
+                            background: '#333',
+                            color: 'white',
+                            padding: '0.5rem 1 rem',
+                            borderWeight: '600',
+                            cursor: 'pointer'
+                        }}
+                        >Login with GitLab</button>
+                        </>
                     )}
                 </li>
             </ul>

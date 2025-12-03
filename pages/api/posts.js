@@ -1,4 +1,6 @@
-import { verifyToken } from "@/lib/auth";
+import {version} from "react";
+import {getServerSession} from "next-auth";
+import {AuthOptions} from "./auth/[...nextauth]";
 
 export default async function handler(req, res) {
 
@@ -10,15 +12,12 @@ export default async function handler(req, res) {
 
     function requireAuth(handler) {
         return async (req, res) => {
-            const token = req.cookies?.token;
-            const payload = verifyToken(token);
-
-            if (!payload) {
-                return res.status(401).json({ error: "Authentication Required" });
+            const session = await getServerSession(req, res, authOptions)
+            if (!session || !session.user){
+                return res.status(401).json({error: "unauthorized - please log in to continue"})
             }
 
-            req.user = payload;
-
+            req.user = session.user;
             return handler(req, res);
         };
     }

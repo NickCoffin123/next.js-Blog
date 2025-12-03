@@ -1,0 +1,93 @@
+// prisma/schema.prisma
+// Week 12 - Day 2: NEW FILE – Prisma Schema (Our Real Database Design)
+// This file defines EXACTLY how our user data is stored in PostgreSQL
+// Think of it as the "blueprint" for our users + auth tables
+
+// ──────────────────────────────────────────────────────────────
+// 1. CLIENT GENERATOR
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ──────────────────────────────────────────────────────────────
+// 2. DATABASE CONNECTION
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────────────────────
+// 3. USER MODEL – Used by NextAuth + our app
+model User {
+  // Primary Key – unique identifier for every user
+  id        String   @id @default(uuid())
+  // → Auto-generates a UUID like "f1a2b3c4-..." – no two users ever have same ID
+
+  // Email – must be unique across all users
+  email     String   @unique
+  // → Used for login and RBAC checks
+
+  // Optional name + avatar
+  name          String?
+  image         String?
+
+  // Optional email verification timestamp (NextAuth uses this field)
+  emailVerified DateTime?
+
+  // Role – controls permissions (RBAC!)
+  role      String   @default("author")
+  // → New GitLab users = "author"
+
+  // Timestamps – automatically managed
+  createdAt DateTime @default(now())   // When user first signed up
+  updatedAt DateTime @updatedAt        // When profile last changed
+
+  // Relations required by NextAuth
+  accounts  Account[]
+  sessions  Session[]
+
+  // ── Why these fields matter in our app ─────────────────────
+  // • email → Show in NavBar + check post ownership
+  // • role  → Show "Admin Panel" link + allow delete any post
+  // • id    → Used internally by NextAuth/Prisma
+}
+
+// ──────────────────────────────────────────────────────────────
+// 4. NEXTAUTH MODELS – Required by @next-auth/prisma-adapter
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               String
+  provider           String
+  providerAccountId  String
+
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+  created_at         Int?
+
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

@@ -4,17 +4,20 @@ import {PostProvider} from "@/components/PostContext";
 import {CategoryProvider} from "@/components/CategoryContext";
 import Layout from "@/components/Layout";
 import {AuthProvider} from "@/components/AuthContext";
+import {SessionProvider} from "next-auth/react";
 
 export default function App({Component, pageProps}) {
     return (
-        <PostProvider>
-            <CategoryProvider>
-                <AuthProvider>
-                    <Layout>
-                        <Component {...pageProps} />
-                    </Layout>
-                </AuthProvider>
-            </CategoryProvider>
-        </PostProvider>
+        <SessionProvider>
+            <PostProvider>
+                <CategoryProvider>
+                    <AuthProvider>
+                        <Layout>
+                            <Component {...pageProps} />
+                        </Layout>
+                    </AuthProvider>
+                </CategoryProvider>
+            </PostProvider>
+        </SessionProvider>
     )
 }

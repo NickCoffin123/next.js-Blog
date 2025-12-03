@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { PostContext } from "./PostContext.js";
 import Link from "next/link";
-import { AuthContext } from "@/components/AuthContext";
+import {useAuth} from "@/components/AuthContext"
 
 export default function PostList({
                                      posts: propPosts,
@@ -14,9 +14,8 @@ export default function PostList({
     // Get posts from global PostContext
     const { posts: contextPosts, setPosts } = useContext(PostContext);
     const posts = propPosts || contextPosts || [];
+    const {user} = useAuth()
 
-    // Authenticated user (email + role)
-    const {user} = useContext(AuthContext);
 
     // Remove from UI without touching DB yet
     const handleRemove = (postId) => {

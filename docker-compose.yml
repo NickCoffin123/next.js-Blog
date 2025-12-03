@@ -1,0 +1,50 @@
+# docker-compose.yml
+# Week 12 - Day 2: NEW FILE – PostgreSQL + pgAdmin (Database GUI)
+# Run with: docker-compose -p inft3102-network -f docker-compose.yml up -d
+
+services:
+  # ────────────────────────────── PostgreSQL Database ──────────────────────────────
+  inft3102-database:
+    image: postgres:15
+    container_name: inft3102-database
+    restart: no                      # Better than "no" — survives reboots
+    environment:
+      POSTGRES_DB: blogdb
+      POSTGRES_USER: bloguser
+      POSTGRES_PASSWORD: blogpass123
+    ports:
+      - "5432:5432"                  # Host → Container
+    volumes:
+      - ./docker/postgres_data:/var/lib/postgresql/data
+    networks:
+      - inft3102-network
+
+  # ────────────────────────────── pgAdmin (Web GUI) ──────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: inft3102-pgadmin
+    restart: no
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@blog.com      # Login email
+      PGADMIN_DEFAULT_PASSWORD: password         # Login password
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "8080:80"                                # Access at http://localhost:8080
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - inft3102-database
+    networks:
+      - inft3102-network
+
+# ────────────────────────────── Networks & Volumes ──────────────────────────────
+networks:
+  inft3102-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
